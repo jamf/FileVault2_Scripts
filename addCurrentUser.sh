@@ -43,6 +43,8 @@
 #	-Created by Bryson Tyrrell on November 5th, 2012
 #	-Updated by Sam Fortuna on July 31, 2013
 #		-Improved Error Handling
+#	-Updated by Sam Fortuna on January 14, 2014
+#		-Added logic for Mavericks OS
 #
 ####################################################################################################
 #
@@ -64,7 +66,10 @@ if [ "${adminPass}" == "" ]; then
 fi
 
 ## Get the logged in user's name
-userName=`logname`
+userName=`defaults read /Library/Preferences/com.apple.loginwindow lastUserName`
+
+## Get the OS version
+OS=`/usr/bin/defaults read /System/Library/CoreServices/SystemVersion ProductVersion | awk '{print substr($1,1,4)}'`
 
 ## This first user check sees if the logged in account is already authorized with FileVault 2
 userCheck=`fdesetup list | awk -v usrN="$userName" -F, 'index($0, usrN) {print $1}'`
@@ -89,24 +94,48 @@ userPass="$(osascript -e 'Tell application "System Events" to display dialog "Pl
 
 echo "Adding user to FileVault 2 list."
 
-## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
-expect -c "
-log_user 0
-spawn fdesetup add -usertoadd $userName
-expect \"Enter the primary user name:\"
-send ${adminName}\r
-expect \"Enter the password for the user '$adminName':\"
-send ${adminPass}\r
-expect \"Enter the password for the added user '$userName':\"
-send ${userPass}\r
-log_user 1
-expect eof
-"
+if [[ "$OS" < "10.8" ]]; then
+	echo "OS version not 10.8+ or OS version unrecognized"
+	exit "${OS}"
+	exit 5
+
+elif [[ "$OS" = "10.8" ]]; then
+
+	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
+	expect -c "
+	log_user 0
+	spawn fdesetup add -usertoadd $userName
+	expect \"Enter the primary user name:\"
+	send ${adminName}\r
+	expect \"Enter the password for the user '$adminName':\"
+	send ${adminPass}\r
+	expect \"Enter the password for the added user '$userName':\"
+	send ${userPass}\r
+	log_user 1
+	expect eof
+	"
+elif [[ "$OS" = "10.9" ]]; then
+
+	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
+	expect -c "
+	log_user 0
+	spawn fdesetup add -usertoadd $userName
+	expect \"Enter a password*\"
+	send ${adminPass}\r
+	expect \"Enter the password*\"
+	send ${userPass}\r
+	log_user 1
+	expect eof
+	"
+fi
+
 ## This second user check sees if the logged in account was successfully added to the FileVault 2 list
 userCheck=`fdesetup list | awk -v usrN="$userName" -F, 'index($0, usrN) {print $1}'`
 if [ "${userCheck}" != "${userName}" ]; then
 	echo "Failed to add user to FileVault 2 list."
-	exit 5
+	echo "Currently enabled users:"
+	echo "${userCheck}"
+	exit 6
 fi
 
 echo "${userName} has been added to the FileVault 2 list."
