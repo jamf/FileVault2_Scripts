@@ -45,6 +45,8 @@
 # HISTORY
 #
 #	-Created by Sam Fortuna on Sept. 5, 2014
+#	-Updated by Sam Fortuna on Nov. 18, 2014
+#		-Added support for 10.10
 #
 ####################################################################################################
 #
@@ -77,22 +79,20 @@ userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display d
 
 echo "Issuing new recovery key"
 
-if [[ "$OS" != "10.9" ]]; then
-	echo "OS version not 10.9+ or OS version unrecognized"
-	echo "${OS}"
-	exit 5
-
-elif [[ "$OS" = "10.9" ]]; then
-
+if [[ "$OS" = "10.9" || "$OS" = "10.10"  ]]; then
 	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
 	expect -c "
 	log_user 0
 	spawn fdesetup changerecovery -personal
 	expect \"Enter a password for '/', or the recovery key:\"
-	send ${userPass}\r
+	send "${userPass}"\r
 	log_user 1
 	expect eof
 	"
+else
+	echo "OS version not 10.9+ or OS version unrecognized"
+	echo "${OS}"
+	exit 5
 fi
 
 exit 0
