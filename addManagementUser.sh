@@ -69,7 +69,7 @@ fi
 userName=`defaults read /Library/Preferences/com.apple.loginwindow lastUserName`
 
 ## Get the OS version
-OS=`/usr/bin/defaults read /System/Library/CoreServices/SystemVersion ProductVersion | awk '{print substr($1,1,4)}'`
+OS=`/usr/bin/sw_vers -productVersion | awk -F. {'print $2'}`
 
 ## This first user check sees if the logged in account is already authorized with FileVault 2
 userCheck=`fdesetup list | awk -v usrN="$adminName" -F, 'index($0, usrN) {print $1}'`
@@ -94,12 +94,12 @@ userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display d
 
 echo "Adding user to FileVault 2 list."
 
-if [[ "$OS" < "10.8" ]]; then
+if [[ "$OS" < "8" ]]; then
 	echo "OS version not 10.8+ or OS version unrecognized"
-	exit "${OS}"
+	echo "$(/usr/bin/sw_vers -productVersion)"
 	exit 5
 
-elif [[ "$OS" = "10.8" ]]; then
+elif [[ "$OS" = "8" ]]; then
 
 	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
 	expect -c "
@@ -114,7 +114,7 @@ elif [[ "$OS" = "10.8" ]]; then
 	log_user 1
 	expect eof
 	"
-elif [[ "$OS" = "10.9" ]]; then
+elif [[ "$OS" = "9" ]]; then
 
 	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
 	expect -c "
