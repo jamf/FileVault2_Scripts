@@ -51,7 +51,7 @@
 ####################################################################################################
 #
 ## Get the logged in user's name
-userName=`defaults read /Library/Preferences/com.apple.loginwindow lastUserName`
+userName=$(/usr/bin/stat -f%Su /dev/console)
 
 ## Get the OS version
 OS=`/usr/bin/sw_vers -productVersion | awk -F. {'print $2'}`

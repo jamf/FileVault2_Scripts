@@ -50,7 +50,7 @@ if [[ "${fdeStatus}" == *"FileVault is Off"* ]]; then
 fi
 
 ## Get the logged in user's name
-userName=`defaults read /Library/Preferences/com.apple.loginwindow lastUserName`
+userName=$(/usr/bin/stat -f%Su /dev/console)
 
 ## Check if the currently logged in user is authorized with FileVault 2
 userCheck=`fdesetup list | awk -v usrN="$userName" -F, 'index($0, usrN) {print $1}'`
