@@ -79,7 +79,7 @@ userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display d
 
 echo "Issuing new recovery key"
 
-if [[ "$OS" = "9" || "$OS" = "10"  ]]; then
+if [[ $OS -ge 9  ]]; then
 	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
 	expect -c "
 	log_user 0
