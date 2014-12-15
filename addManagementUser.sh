@@ -45,6 +45,9 @@
 #		-Improved Error Handling
 #	-Updated by Sam Fortuna on January 14, 2014
 #		-Added logic for Mavericks OS
+#	-Updated by Sam Fortuna on December 15, 2014
+#		-Added logic for Yosemite OS
+#		-Improved OS vesion handling
 #
 ####################################################################################################
 #
@@ -94,12 +97,12 @@ userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display d
 
 echo "Adding user to FileVault 2 list."
 
-if [[ "$OS" < "8" ]]; then
+if [[ $OS -lt 8 ]]; then
 	echo "OS version not 10.8+ or OS version unrecognized"
 	echo "$(/usr/bin/sw_vers -productVersion)"
 	exit 5
 
-elif [[ "$OS" = "8" ]]; then
+elif [[ $OS -eq 8 ]]; then
 
 	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
 	expect -c "
@@ -114,7 +117,7 @@ elif [[ "$OS" = "8" ]]; then
 	log_user 1
 	expect eof
 	"
-elif [[ "$OS" = "9" ]]; then
+elif [[ $OS -gt 8 ]]; then
 
 	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
 	expect -c "
