@@ -51,10 +51,10 @@
 ####################################################################################################
 #
 ## Get the logged in user's name
-userName=`defaults read /Library/Preferences/com.apple.loginwindow lastUserName`
+userName=$(/usr/bin/stat -f%Su /dev/console)
 
 ## Get the OS version
-OS=`/usr/bin/defaults read /System/Library/CoreServices/SystemVersion ProductVersion | awk '{print substr($1,1,4)}'`
+OS=`/usr/bin/sw_vers -productVersion | awk -F. {'print $2'}`
 
 ## This first user check sees if the logged in account is already authorized with FileVault 2
 userCheck=`fdesetup list | awk -v usrN="$userName" -F, 'index($0, usrN) {print $1}'`
@@ -79,7 +79,7 @@ userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display d
 
 echo "Issuing new recovery key"
 
-if [[ "$OS" = "10.9" || "$OS" = "10.10"  ]]; then
+if [[ "$OS" = "9" || "$OS" = "10"  ]]; then
 	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
 	expect -c "
 	log_user 0
@@ -91,7 +91,7 @@ if [[ "$OS" = "10.9" || "$OS" = "10.10"  ]]; then
 	"
 else
 	echo "OS version not 10.9+ or OS version unrecognized"
-	echo "${OS}"
+	echo "$(/usr/bin/sw_vers -productVersion)"
 	exit 5
 fi
 
