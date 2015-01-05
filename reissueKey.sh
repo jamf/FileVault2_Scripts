@@ -54,10 +54,10 @@
 userName=$(/usr/bin/stat -f%Su /dev/console)
 
 ## Get the OS version
-OS=`/usr/bin/sw_vers -productVersion | awk -F. {'print $2'}`
+OS=$(/usr/bin/sw_vers -productVersion | awk -F. {'print $2'})
 
 ## This first user check sees if the logged in account is already authorized with FileVault 2
-userCheck=`fdesetup list | awk -v usrN="$userName" -F, 'index($0, usrN) {print $1}'`
+userCheck=$(fdesetup list | awk -v usrN="$userName" -F, 'index($0, usrN) {print $1}')
 if [ "${userCheck}" != "${userName}" ]; then
 	echo "This user is not a FileVault 2 enabled user."
 	exit 3
