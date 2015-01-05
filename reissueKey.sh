@@ -55,7 +55,11 @@ userName=$(/usr/bin/stat -f%Su /dev/console)
 
 ## Get the OS version
 OS=$(/usr/bin/sw_vers -productVersion | awk -F. {'print $2'})
-
+if [[ $OS -lt 9 ]]; then
+    echo "OS version not 10.9+ or OS version unrecognized."
+    echo "$(/usr/bin/sw_vers -productVersion)"
+    exit 2
+fi
 ## This first user check sees if the logged in account is already authorized with FileVault 2
 userCheck=$(fdesetup list | awk -v usrN="$userName" -F, 'index($0, usrN) {print $1}')
 if [ "${userCheck}" != "${userName}" ]; then
@@ -85,20 +89,14 @@ userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display d
 
 echo "Issuing new recovery key"
 
-if [[ $OS -ge 9  ]]; then
-	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
-	expect -c "
-	log_user 0
-	spawn fdesetup changerecovery -personal
-	expect \"Enter a password for '/', or the recovery key:\"
-	send "${userPass}"\r
-	log_user 1
-	expect eof
-	"
-else
-	echo "OS version not 10.9+ or OS version unrecognized"
-	echo "$(/usr/bin/sw_vers -productVersion)"
-	exit 7
-fi
+## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
+expect -c "
+log_user 0
+spawn fdesetup changerecovery -personal
+expect \"Enter a password for '/', or the recovery key:\"
+send "${userPass}"\r
+log_user 1
+expect eof
+"
 
 exit 0
