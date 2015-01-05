@@ -64,13 +64,19 @@ if [ "${userCheck}" != "${userName}" ]; then
 fi
 
 ## Check to see if the encryption process is complete
-encryptCheck=`fdesetup status`
-statusCheck=$(echo "${encryptCheck}" | grep "FileVault is On.")
-expectedStatus="FileVault is On."
-if [ "${statusCheck}" != "${expectedStatus}" ]; then
-	echo "The encryption process has not completed."
-	echo "${encryptCheck}"
-	exit 4
+encryptCheck="$(fdesetup status)"
+if [[ "$(echo "${encryptCheck}" | grep "Encryption in progress" | wc -l)" -gt 0 ]]; then
+    echo "The encryption process is still in progress."
+    echo "${encryptCheck}"
+    exit 4
+elif [[ "$(echo "${encryptCheck}" | grep "FileVault is Off" | wc -l)" -gt 0 ]]; then
+    echo "Encryption is not active."
+    echo "${encryptCheck}"
+    exit 5
+elif [[ "$(echo "${encryptCheck}" | grep "FileVault is On" | wc -l)" -eq 0 ]]; then
+    echo "Unable to determine encryption status."
+    echo "${encryptCheck}"
+    exit 6
 fi
 
 ## Get the logged in user's password via a prompt
@@ -92,7 +98,7 @@ if [[ $OS -ge 9  ]]; then
 else
 	echo "OS version not 10.9+ or OS version unrecognized"
 	echo "$(/usr/bin/sw_vers -productVersion)"
-	exit 5
+	exit 7
 fi
 
 exit 0
