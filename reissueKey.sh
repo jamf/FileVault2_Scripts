@@ -85,7 +85,10 @@ fi
 
 ## Get the logged in user's password via a prompt
 echo "Prompting ${userName} for their login password."
-userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display dialog "Please enter your login password:" default answer "" with title "Login Password" with text buttons {"Ok"} default button 1 with hidden answer' -e 'text returned of result')"
+userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display dialog "Please enter your login password:" default answer "" with title "Login Password" with text buttons {"OK"} default button 1 with hidden answer' -e 'text returned of result')"
+
+# Alternate password prompt which includes an icon (requires a policy to install /tmp/Icon.icns first)
+# userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display dialog "Please enter your login password:" default answer "" with title "Login Password" with text buttons {"OK"} default button 1 with hidden answer with icon file "private:tmp:Icon.icns"' -e 'text returned of result')"
 
 echo "Issuing new recovery key"
 
