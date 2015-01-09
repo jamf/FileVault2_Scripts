@@ -31,23 +31,23 @@
 # Description
 #   This script was designed to enable the currently logged in user's account the ability to unlock
 #   a drive that was originally encrypted with the management account using a policy from the JSS.
-#	The script will prompt the user for their credentials.
-#	
-#	This script was designed to be run via policy at login or via Self Service.  The encryption
-#	process must be fully completed before this script can be successfully executed.  
+#   The script will prompt the user for their credentials.
+#   
+#   This script was designed to be run via policy at login or via Self Service.  The encryption
+#   process must be fully completed before this script can be successfully executed.  
 #
 ####################################################################################################
 # 
 # HISTORY
 #
-#	-Created by Bryson Tyrrell on November 5th, 2012
-#	-Updated by Sam Fortuna on July 31, 2013
-#		-Improved Error Handling
-#	-Updated by Sam Fortuna on January 14, 2014
-#		-Added logic for Mavericks OS
-#	-Updated by Sam Fortuna on December 15, 2014
-#		-Added logic for Yosemite OS
-#		-Improved OS vesion handling
+#   -Created by Bryson Tyrrell on November 5th, 2012
+#   -Updated by Sam Fortuna on July 31, 2013
+#       -Improved Error Handling
+#   -Updated by Sam Fortuna on January 14, 2014
+#       -Added logic for Mavericks OS
+#   -Updated by Sam Fortuna on December 15, 2014
+#       -Added logic for Yosemite OS
+#       -Improved OS vesion handling
 #
 ####################################################################################################
 #
@@ -59,13 +59,13 @@ adminName=$4
 adminPass=$5
 
 if [ "${adminName}" == "" ]; then
-	echo "Username undefined.  Please pass the management account username in parameter 4"
-	exit 1
+    echo "Username undefined.  Please pass the management account username in parameter 4"
+    exit 1
 fi
 
 if [ "${adminPass}" == "" ]; then
-	echo "Password undefined.  Please pass the management account password in parameter 5"
-	exit 2
+    echo "Password undefined.  Please pass the management account password in parameter 5"
+    exit 2
 fi
 
 ## Get the logged in user's name
@@ -77,8 +77,8 @@ OS=`/usr/bin/sw_vers -productVersion | awk -F. {'print $2'}`
 ## This first user check sees if the logged in account is already authorized with FileVault 2
 userCheck=`fdesetup list | awk -v usrN="$userName" -F, 'index($0, usrN) {print $1}'`
 if [ "${userCheck}" == "${userName}" ]; then
-	echo "This user is already added to the FileVault 2 list."
-	exit 3
+    echo "This user is already added to the FileVault 2 list."
+    exit 3
 fi
 
 ## Check to see if the encryption process is complete
@@ -86,9 +86,9 @@ encryptCheck=`fdesetup status`
 statusCheck=$(echo "${encryptCheck}" | grep "FileVault is On.")
 expectedStatus="FileVault is On."
 if [ "${statusCheck}" != "${expectedStatus}" ]; then
-	echo "The encryption process has not completed, unable to add user at this time."
-	echo "${encryptCheck}"
-	exit 4
+    echo "The encryption process has not completed, unable to add user at this time."
+    echo "${encryptCheck}"
+    exit 4
 fi
 
 ## Get the logged in user's password via a prompt
@@ -98,47 +98,47 @@ userPass="$(osascript -e 'Tell application "System Events" to display dialog "Pl
 echo "Adding user to FileVault 2 list."
 
 if [[ $OS -lt 8 ]]; then
-	echo "OS version not 10.8+ or OS version unrecognized"
-	echo "$(/usr/bin/sw_vers -productVersion)"
-	exit 5
+    echo "OS version not 10.8+ or OS version unrecognized"
+    echo "$(/usr/bin/sw_vers -productVersion)"
+    exit 5
 
 elif [[ $OS -eq 8 ]]; then
 
-	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
-	expect -c "
-	log_user 0
-	spawn fdesetup add -usertoadd $userName
-	expect \"Enter the primary user name:\"
-	send ${adminName}\r
-	expect \"Enter the password for the user '$adminName':\"
-	send ${adminPass}\r
-	expect \"Enter the password for the added user '$userName':\"
-	send ${userPass}\r
-	log_user 1
-	expect eof
-	"
+    ## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
+    expect -c "
+    log_user 0
+    spawn fdesetup add -usertoadd $userName
+    expect \"Enter the primary user name:\"
+    send ${adminName}\r
+    expect \"Enter the password for the user '$adminName':\"
+    send ${adminPass}\r
+    expect \"Enter the password for the added user '$userName':\"
+    send ${userPass}\r
+    log_user 1
+    expect eof
+    "
 elif [[ $OS -gt 8 ]]; then
 
-	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
-	expect -c "
-	log_user 0
-	spawn fdesetup add -usertoadd $userName
-	expect \"Enter a password*\"
-	send ${adminPass}\r
-	expect \"Enter the password*\"
-	send ${userPass}\r
-	log_user 1
-	expect eof
-	"
+    ## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
+    expect -c "
+    log_user 0
+    spawn fdesetup add -usertoadd $userName
+    expect \"Enter a password*\"
+    send ${adminPass}\r
+    expect \"Enter the password*\"
+    send ${userPass}\r
+    log_user 1
+    expect eof
+    "
 fi
 
 ## This second user check sees if the logged in account was successfully added to the FileVault 2 list
 userCheck=`fdesetup list | awk -v usrN="$userName" -F, 'index($0, usrN) {print $1}'`
 if [ "${userCheck}" != "${userName}" ]; then
-	echo "Failed to add user to FileVault 2 list."
-	echo "Currently enabled users:"
-	echo "${userCheck}"
-	exit 6
+    echo "Failed to add user to FileVault 2 list."
+    echo "Currently enabled users:"
+    echo "${userCheck}"
+    exit 6
 fi
 
 echo "${userName} has been added to the FileVault 2 list."

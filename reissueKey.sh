@@ -30,23 +30,23 @@
 #
 # Description
 #
-#	The purpose of this script is to allow a new individual recovery key to be issued
-#	if the current key is invalid and the management account is not enabled for FV2,
-#	or if the machine was encrypted outside of the JSS.
+#   The purpose of this script is to allow a new individual recovery key to be issued
+#   if the current key is invalid and the management account is not enabled for FV2,
+#   or if the machine was encrypted outside of the JSS.
 #
-#	First put a configuration profile for FV2 recovery key redirection in place.
-#	Ensure keys are being redirected to your JSS.
+#   First put a configuration profile for FV2 recovery key redirection in place.
+#   Ensure keys are being redirected to your JSS.
 #
-#	This script will prompt the user for their password so a new FV2 individual
-#	recovery key can be issued and redirected to the JSS.
+#   This script will prompt the user for their password so a new FV2 individual
+#   recovery key can be issued and redirected to the JSS.
 #
 ####################################################################################################
 # 
 # HISTORY
 #
-#	-Created by Sam Fortuna on Sept. 5, 2014
-#	-Updated by Sam Fortuna on Nov. 18, 2014
-#		-Added support for 10.10
+#   -Created by Sam Fortuna on Sept. 5, 2014
+#   -Updated by Sam Fortuna on Nov. 18, 2014
+#       -Added support for 10.10
 #
 ####################################################################################################
 #
@@ -63,8 +63,8 @@ fi
 ## This first user check sees if the logged in account is already authorized with FileVault 2
 userCheck=$(fdesetup list | awk -v usrN="$userName" -F, 'index($0, usrN) {print $1}')
 if [ "${userCheck}" != "${userName}" ]; then
-	echo "This user is not a FileVault 2 enabled user."
-	exit 3
+    echo "This user is not a FileVault 2 enabled user."
+    exit 3
 fi
 
 ## Check to see if the encryption process is complete
