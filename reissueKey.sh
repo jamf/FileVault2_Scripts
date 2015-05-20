@@ -41,12 +41,14 @@
 #   recovery key can be issued and redirected to the JSS.
 #
 ####################################################################################################
-# 
+#
 # HISTORY
 #
 #   -Created by Sam Fortuna on Sept. 5, 2014
 #   -Updated by Sam Fortuna on Nov. 18, 2014
 #       -Added support for 10.10
+#   -Updated by Elliot Jordan on May 19, 2015
+#       -Swiched from `expect` to `-inputplist` method
 #
 ####################################################################################################
 #
@@ -90,16 +92,18 @@ userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display d
 # Alternate password prompt which includes an icon (requires a policy to install /tmp/Icon.icns first)
 # userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display dialog "Please enter your login password:" default answer "" with title "Login Password" with text buttons {"OK"} default button 1 with hidden answer with icon file "private:tmp:Icon.icns"' -e 'text returned of result')"
 
-echo "Issuing new recovery key"
-
-## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
-expect -c "
-log_user 0
-spawn fdesetup changerecovery -personal
-expect \"Enter a password for '/', or the recovery key:\"
-send "${userPass}"\r
-log_user 1
-expect eof
-"
+echo "Issuing new recovery key..."
+fdesetup changerecovery -personal -inputplist << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Username</key>
+    <string>$userName</string>
+    <key>Password</key>
+    <string>$userPass</string>
+</dict>
+</plist>
+EOF
 
 exit 0
