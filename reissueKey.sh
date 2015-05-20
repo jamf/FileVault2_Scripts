@@ -30,23 +30,25 @@
 #
 # Description
 #
-#	The purpose of this script is to allow a new individual recovery key to be issued
-#	if the current key is invalid and the management account is not enabled for FV2,
-#	or if the machine was encrypted outside of the JSS.
+#   The purpose of this script is to allow a new individual recovery key to be issued
+#   if the current key is invalid and the management account is not enabled for FV2,
+#   or if the machine was encrypted outside of the JSS.
 #
-#	First put a configuration profile for FV2 recovery key redirection in place.
-#	Ensure keys are being redirected to your JSS.
+#   First put a configuration profile for FV2 recovery key redirection in place.
+#   Ensure keys are being redirected to your JSS.
 #
-#	This script will prompt the user for their password so a new FV2 individual
-#	recovery key can be issued and redirected to the JSS.
+#   This script will prompt the user for their password so a new FV2 individual
+#   recovery key can be issued and redirected to the JSS.
 #
 ####################################################################################################
-# 
+#
 # HISTORY
 #
-#	-Created by Sam Fortuna on Sept. 5, 2014
-#	-Updated by Sam Fortuna on Nov. 18, 2014
-#		-Added support for 10.10
+#   -Created by Sam Fortuna on Sept. 5, 2014
+#   -Updated by Sam Fortuna on Nov. 18, 2014
+#       -Added support for 10.10
+#   -Updated by Elliot Jordan on May 19, 2015
+#       -Swiched from `expect` to `-inputplist` method
 #
 ####################################################################################################
 #
@@ -54,45 +56,54 @@
 userName=$(/usr/bin/stat -f%Su /dev/console)
 
 ## Get the OS version
-OS=`/usr/bin/sw_vers -productVersion | awk -F. {'print $2'}`
-
+OS=$(/usr/bin/sw_vers -productVersion | awk -F. {'print $2'})
+if [[ $OS -lt 9 ]]; then
+    echo "OS version not 10.9+ or OS version unrecognized."
+    echo "$(/usr/bin/sw_vers -productVersion)"
+    exit 2
+fi
 ## This first user check sees if the logged in account is already authorized with FileVault 2
-userCheck=`fdesetup list | awk -v usrN="$userName" -F, 'index($0, usrN) {print $1}'`
+userCheck=$(fdesetup list | awk -v usrN="$userName" -F, 'index($0, usrN) {print $1}')
 if [ "${userCheck}" != "${userName}" ]; then
-	echo "This user is not a FileVault 2 enabled user."
-	exit 3
+    echo "This user is not a FileVault 2 enabled user."
+    exit 3
 fi
 
 ## Check to see if the encryption process is complete
-encryptCheck=`fdesetup status`
-statusCheck=$(echo "${encryptCheck}" | grep "FileVault is On.")
-expectedStatus="FileVault is On."
-if [ "${statusCheck}" != "${expectedStatus}" ]; then
-	echo "The encryption process has not completed."
-	echo "${encryptCheck}"
-	exit 4
+encryptCheck="$(fdesetup status)"
+if [[ "$(echo "${encryptCheck}" | grep "Encryption in progress" | wc -l)" -gt 0 ]]; then
+    echo "The encryption process is still in progress."
+    echo "${encryptCheck}"
+    exit 4
+elif [[ "$(echo "${encryptCheck}" | grep "FileVault is Off" | wc -l)" -gt 0 ]]; then
+    echo "Encryption is not active."
+    echo "${encryptCheck}"
+    exit 5
+elif [[ "$(echo "${encryptCheck}" | grep "FileVault is On" | wc -l)" -eq 0 ]]; then
+    echo "Unable to determine encryption status."
+    echo "${encryptCheck}"
+    exit 6
 fi
 
 ## Get the logged in user's password via a prompt
 echo "Prompting ${userName} for their login password."
-userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display dialog "Please enter your login password:" default answer "" with title "Login Password" with text buttons {"Ok"} default button 1 with hidden answer' -e 'text returned of result')"
+userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display dialog "Please enter your login password:" default answer "" with title "Login Password" with text buttons {"OK"} default button 1 with hidden answer' -e 'text returned of result')"
 
-echo "Issuing new recovery key"
+# Alternate password prompt which includes an icon (requires a policy to install /tmp/Icon.icns first)
+# userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display dialog "Please enter your login password:" default answer "" with title "Login Password" with text buttons {"OK"} default button 1 with hidden answer with icon file "private:tmp:Icon.icns"' -e 'text returned of result')"
 
-if [[ $OS -ge 9  ]]; then
-	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
-	expect -c "
-	log_user 0
-	spawn fdesetup changerecovery -personal
-	expect \"Enter a password for '/', or the recovery key:\"
-	send "${userPass}"\r
-	log_user 1
-	expect eof
-	"
-else
-	echo "OS version not 10.9+ or OS version unrecognized"
-	echo "$(/usr/bin/sw_vers -productVersion)"
-	exit 5
-fi
+echo "Issuing new recovery key..."
+fdesetup changerecovery -personal -inputplist << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Username</key>
+    <string>$userName</string>
+    <key>Password</key>
+    <string>$userPass</string>
+</dict>
+</plist>
+EOF
 
 exit 0

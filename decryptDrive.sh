@@ -30,7 +30,7 @@
 #
 # Description
 #   This script was designed to decrypt a FV2 encrypted drive.  This script must be run
-#	while a user that is currently enabled for FV2 is logged in.
+#   while a user that is currently enabled for FV2 is logged in.
 #
 ####################################################################################################
 # 
@@ -45,8 +45,8 @@
 fdeStatus=`fdesetup status`
 
 if [[ "${fdeStatus}" == *"FileVault is Off"* ]]; then
-	echo "FileVault is not on, exiting now"
-	exit 1
+    echo "FileVault is not on, exiting now"
+    exit 1
 fi
 
 ## Get the logged in user's name
@@ -55,8 +55,8 @@ userName=$(/usr/bin/stat -f%Su /dev/console)
 ## Check if the currently logged in user is authorized with FileVault 2
 userCheck=`fdesetup list | awk -v usrN="$userName" -F, 'index($0, usrN) {print $1}'`
 if [ "${userCheck}" != "${userName}" ]; then
-	echo "This user is not enabled for FileVault 2 access."
-	exit 2
+    echo "This user is not enabled for FileVault 2 access."
+    exit 2
 fi
 
 ## Get the logged in user's password via a prompt
@@ -78,10 +78,10 @@ sleep 10
 fdeStatus=`fdesetup status`
 
 if [[ "${fdeStatus}" == *"Decryption"* ]]; then
-	echo "FileVault is no longer enabled."
-	exit 0
+    echo "FileVault is no longer enabled."
+    exit 0
 else
-	echo "FileVault is On, decryption failed"
-	echo "Current FV2 Status: ${fdeStatus}"
-	exit 3
+    echo "FileVault is On, decryption failed"
+    echo "Current FV2 Status: ${fdeStatus}"
+    exit 3
 fi
