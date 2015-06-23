@@ -47,6 +47,8 @@
 #	-Created by Sam Fortuna on Sept. 5, 2014
 #	-Updated by Sam Fortuna on Nov. 18, 2014
 #		-Added support for 10.10
+#   	-Updated by Sam Fortuna on June 23, 2015
+#       	-Properly escapes special characters in user passwords
 #
 ####################################################################################################
 #
@@ -85,7 +87,8 @@ if [[ $OS -ge 9  ]]; then
 	log_user 0
 	spawn fdesetup changerecovery -personal
 	expect \"Enter a password for '/', or the recovery key:\"
-	send "${userPass}"\r
+	send {${userPass}}
+	send "\r"
 	log_user 1
 	expect eof
 	"
