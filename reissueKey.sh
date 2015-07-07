@@ -87,7 +87,7 @@ if [[ $OS -ge 9  ]]; then
 	log_user 0
 	spawn fdesetup changerecovery -personal
 	expect \"Enter a password for '/', or the recovery key:\"
-	send "{${userPass}}""
+	send "{${userPass}}"
 	send \r
 	log_user 1
 	expect eof
