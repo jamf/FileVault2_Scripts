@@ -49,6 +49,8 @@
 #		-Added support for 10.10
 #   	-Updated by Sam Fortuna on June 23, 2015
 #       	-Properly escapes special characters in user passwords
+#	-Updated by Bram Cohen on May 27, 2016
+#		-Pipe FV key and password to /dev/null
 #
 ####################################################################################################
 #
@@ -91,7 +93,7 @@ if [[ $OS -ge 9  ]]; then
 	send \r
 	log_user 1
 	expect eof
-	"
+	" >> /dev/null
 else
 	echo "OS version not 10.9+ or OS version unrecognized"
 	echo "$(/usr/bin/sw_vers -productVersion)"
