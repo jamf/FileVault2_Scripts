@@ -2,7 +2,7 @@
 
 ####################################################################################################
 #
-# Copyright (c) 2013, JAMF Software, LLC.  All rights reserved.
+# Copyright (c) 2016 Jamf.  All rights reserved.
 #
 #       Redistribution and use in source and binary forms, with or without
 #       modification, are permitted provided that the following conditions are met:
@@ -11,9 +11,9 @@
 #               * Redistributions in binary form must reproduce the above copyright
 #                 notice, this list of conditions and the following disclaimer in the
 #                 documentation and/or other materials provided with the distribution.
-#               * Neither the name of the JAMF Software, LLC nor the
-#                 names of its contributors may be used to endorse or promote products
-#                 derived from this software without specific prior written permission.
+#               * Neither the name of the Jamf nor the names of its contributors may be
+#                 used to endorse or promote products derived from this software without 
+#                 specific prior written permission.
 #
 #       THIS SOFTWARE IS PROVIDED BY JAMF SOFTWARE, LLC "AS IS" AND ANY
 #       EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -51,11 +51,16 @@
 #       	-Properly escapes special characters in user passwords
 #	-Updated by Bram Cohen on May 27, 2016
 #		-Pipe FV key and password to /dev/null
+#	-Updated by Josh Roskos on Nov. 15, 2016
+#		-Added use of launchctl asuser function
 #
 ####################################################################################################
 #
 ## Get the logged in user's name
 userName=$(/usr/bin/stat -f%Su /dev/console)
+
+## Get the logged in user's UID
+userID=$(/usr/bin/id -u ${userName})
 
 ## Get the OS version
 OS=`/usr/bin/sw_vers -productVersion | awk -F. {'print $2'}`
@@ -79,7 +84,7 @@ fi
 
 ## Get the logged in user's password via a prompt
 echo "Prompting ${userName} for their login password."
-userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display dialog "Please enter your login password:" default answer "" with title "Login Password" with text buttons {"Ok"} default button 1 with hidden answer' -e 'text returned of result')"
+userPass="$(/bin/launchctl asuser ${userID} /usr/bin/osascript -e 'Tell application "System Events" to display dialog "Please enter your login password:" default answer "" with title "Login Password" with text buttons {"Ok"} default button 1 with hidden answer' -e 'text returned of result')"
 
 echo "Issuing new recovery key"
 
