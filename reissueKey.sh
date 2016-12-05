@@ -51,6 +51,9 @@
 #       	-Properly escapes special characters in user passwords
 #	-Updated by Bram Cohen on May 27, 2016
 #		-Pipe FV key and password to /dev/null
+#	-Updated by Jordan Wisniewski on Dec 5, 2016
+#		-Removed quotes for 'send {${userPass}}' so
+#		passwords with spaces work.
 #
 ####################################################################################################
 #
@@ -89,7 +92,7 @@ if [[ $OS -ge 9  ]]; then
 	log_user 0
 	spawn fdesetup changerecovery -personal
 	expect \"Enter a password for '/', or the recovery key:\"
-	send "{${userPass}}"
+	send {${userPass}}
 	send \r
 	log_user 1
 	expect eof
