@@ -54,6 +54,9 @@
 #	-Updated by Jordan Wisniewski on Dec 5, 2016
 #		-Removed quotes for 'send {${userPass}}' so
 #		passwords with spaces work.
+#   -Updated by Daniel MacLaughlin on June 17, 2017
+#       -changes to run command as sudo -u $username as prompt wasn't displaying accurately
+#       -added FileVault icon to dialog box
 #
 ####################################################################################################
 #
@@ -82,7 +85,7 @@ fi
 
 ## Get the logged in user's password via a prompt
 echo "Prompting ${userName} for their login password."
-userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display dialog "Please enter your login password:" default answer "" with title "Login Password" with text buttons {"Ok"} default button 1 with hidden answer' -e 'text returned of result')"
+userPass=$(sudo -u ${userName} /usr/bin/osascript -e 'Tell application "System Events" to display dialog "Please enter your login password to update your Encryption:" default answer "" with title "Login Password" with icon file "System:Library:CoreServices:CoreTypes.bundle:Contents:Resources:FileVaultIcon.icns" with text buttons {"Ok"} default button 1 with hidden answer' -e 'text returned of result')
 
 echo "Issuing new recovery key"
 
