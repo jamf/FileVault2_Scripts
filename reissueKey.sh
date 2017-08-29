@@ -2,7 +2,7 @@
 
 ####################################################################################################
 #
-# Copyright (c) 2013, JAMF Software, LLC.  All rights reserved.
+# Copyright (c) 2017, JAMF Software, LLC.  All rights reserved.
 #
 #       Redistribution and use in source and binary forms, with or without
 #       modification, are permitted provided that the following conditions are met:
@@ -60,11 +60,14 @@
 ## Get the logged in user's name
 userName=$(/usr/bin/stat -f%Su /dev/console)
 
+userNameUUID=$(dscl . -read /Users/$userName/ GeneratedUID | awk '{print $2}')
+echo $userNameUUID
+
 ## Get the OS version
 OS=`/usr/bin/sw_vers -productVersion | awk -F. {'print $2'}`
 
 ## This first user check sees if the logged in account is already authorized with FileVault 2
-userCheck=`fdesetup list | awk -v usrN="$userName" -F, 'index($0, usrN) {print $1}'`
+userCheck=`fdesetup list | awk -v usrN="$userNameUUID" -F, 'match($0, usrN) {print $1}'`
 if [ "${userCheck}" != "${userName}" ]; then
 	echo "This user is not a FileVault 2 enabled user."
 	exit 3
