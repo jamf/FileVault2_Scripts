@@ -54,14 +54,17 @@
 #	-Updated by Jordan Wisniewski on Dec 5, 2016
 #		-Removed quotes for 'send {${userPass}}' so
 #		passwords with spaces work.
+#	-Updated by Shane Brown/Kylie Bareis on Aug 29, 2017
+#		 - Fixed an issue with usernames that contain 
+#		sub-string matches of each other.
 #
 ####################################################################################################
 #
 ## Get the logged in user's name
 userName=$(/usr/bin/stat -f%Su /dev/console)
 
+## Grab the UUID of the User
 userNameUUID=$(dscl . -read /Users/$userName/ GeneratedUID | awk '{print $2}')
-echo $userNameUUID
 
 ## Get the OS version
 OS=`/usr/bin/sw_vers -productVersion | awk -F. {'print $2'}`
