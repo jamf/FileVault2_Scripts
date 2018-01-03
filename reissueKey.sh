@@ -95,7 +95,7 @@ userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display d
 echo "Issuing new recovery key"
 
 
-if [[ $OS -ge 9 -a $OS -lt 13 ]]; then
+if [[ $OS -ge 9 ]] &&  [[ $OS -lt 13 ]]; then
 	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
 	expect -c "
 	log_user 0
@@ -107,6 +107,7 @@ if [[ $OS -ge 9 -a $OS -lt 13 ]]; then
 	expect eof
 	" >> /dev/null
 elif [[ $OS -ge 13 ]]; then
+	expect -c "
 	log_user 0
 	spawn fdesetup changerecovery -personal
 	expect \"Enter the user name:\"
@@ -117,11 +118,10 @@ elif [[ $OS -ge 13 ]]; then
 	send \r
 	log_user 1
 	expect eof
-	" >> /dev/null
+	"
 else
 	echo "OS version not 10.9+ or OS version unrecognized"
 	echo "$(/usr/bin/sw_vers -productVersion)"
 	exit 5
 fi
-
 exit 0
