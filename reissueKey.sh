@@ -57,6 +57,8 @@
 #	-Updated by Shane Brown/Kylie Bareis on Aug 29, 2017
 #		 - Fixed an issue with usernames that contain 
 #		sub-string matches of each other.
+#	-Updated by Bram Cohen on Jan 3, 2018
+#		- 10.13 adds a new prompt for username before password in changerecovery
 #
 ####################################################################################################
 #
@@ -92,11 +94,24 @@ userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display d
 
 echo "Issuing new recovery key"
 
-if [[ $OS -ge 9  ]]; then
+
+if [[ $OS -ge 9 -a $OS -lt 13 ]]; then
 	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
 	expect -c "
 	log_user 0
 	spawn fdesetup changerecovery -personal
+	expect \"Enter a password for '/', or the recovery key:\"
+	send {${userPass}}
+	send \r
+	log_user 1
+	expect eof
+	" >> /dev/null
+elif [[ $OS -ge 13 ]]; then
+	log_user 0
+	spawn fdesetup changerecovery -personal
+	expect \"Enter the user name:\"
+	send {${userName}}
+	send \r
 	expect \"Enter a password for '/', or the recovery key:\"
 	send {${userPass}}
 	send \r
