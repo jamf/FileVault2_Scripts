@@ -41,7 +41,7 @@
 #	recovery key can be issued and redirected to the JSS.
 #
 ####################################################################################################
-# 
+#
 # HISTORY
 #
 #	-Created by Sam Fortuna on Sept. 5, 2014
@@ -55,13 +55,30 @@
 #		-Removed quotes for 'send {${userPass}}' so
 #		passwords with spaces work.
 #	-Updated by Shane Brown/Kylie Bareis on Aug 29, 2017
-#		 - Fixed an issue with usernames that contain 
+#		 - Fixed an issue with usernames that contain
 #		sub-string matches of each other.
 #	-Updated by Bram Cohen on Jan 3, 2018
 #		- 10.13 adds a new prompt for username before password in changerecovery
-#
+# -Updated by Matt Boyle on July 6, 2018
+#		- Error handeling, custom Window Lables, Messages and FV2 Icon
 ####################################################################################################
 #
+# Parameter 4 = Set organization name in pop up window
+# Parameter 5 = Failed Attempts until Stop
+# Paramter 6 = Custom text for contact information.
+#Customizing Window
+if [ ! -z "$4" ]
+	then
+		orgName="$4 -"
+	fi
+
+if [ ! -z "$6" ]
+	then
+		haltMsg="$6"
+	else
+		haltMsg="Please Contact IT for Further assistance."
+	fi
+
 ## Get the logged in user's name
 userName=$(/usr/bin/stat -f%Su /dev/console)
 
@@ -78,6 +95,15 @@ if [ "${userCheck}" != "${userName}" ]; then
 	exit 3
 fi
 
+## Counter for Attempts
+try=0
+if [ ! -z "$5" ]
+	then
+		maxTry=$5
+	else
+		maxTry=2
+	fi
+
 ## Check to see if the encryption process is complete
 encryptCheck=`fdesetup status`
 statusCheck=$(echo "${encryptCheck}" | grep "FileVault is On.")
@@ -88,16 +114,24 @@ if [ "${statusCheck}" != "${expectedStatus}" ]; then
 	exit 4
 fi
 
+passwordPrompt () {
 ## Get the logged in user's password via a prompt
 echo "Prompting ${userName} for their login password."
-userPass="$(/usr/bin/osascript -e 'Tell application "System Events" to display dialog "Please enter your login password:" default answer "" with title "Login Password" with text buttons {"Ok"} default button 1 with hidden answer' -e 'text returned of result')"
-
-echo "Issuing new recovery key"
-
-
+userPass=$(/usr/bin/osascript -e "
+on run
+	display dialog \"To generate a new FileVault key\" & return & \"Enter login password for '$userName'\" default answer \"\" with title \"$orgName FileVault Key Reset\" buttons {\"Cancel\", \"Ok\"} default button 2 with icon POSIX file \"/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/FileVaultIcon.icns\" with text and hidden answer
+	set userPass to text returned of the result
+	return userPass
+end run")
+if [ "$?" == "1" ]
+	then
+		echo "User Canceled"
+		exit 0
+	fi
+try=$((try+1))
 if [[ $OS -ge 9 ]] &&  [[ $OS -lt 13 ]]; then
 	## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
-	expect -c "
+	result=$(expect -c "
 	log_user 0
 	spawn fdesetup changerecovery -personal
 	expect \"Enter a password for '/', or the recovery key:\"
@@ -105,9 +139,9 @@ if [[ $OS -ge 9 ]] &&  [[ $OS -lt 13 ]]; then
 	send \r
 	log_user 1
 	expect eof
-	" >> /dev/null
+	" >> /dev/null)
 elif [[ $OS -ge 13 ]]; then
-	expect -c "
+	result=$(expect -c "
 	log_user 0
 	spawn fdesetup changerecovery -personal
 	expect \"Enter the user name:\"
@@ -118,10 +152,61 @@ elif [[ $OS -ge 13 ]]; then
 	send \r
 	log_user 1
 	expect eof
-	"
+	")
 else
 	echo "OS version not 10.9+ or OS version unrecognized"
 	echo "$(/usr/bin/sw_vers -productVersion)"
 	exit 5
 fi
-exit 0
+}
+
+successAlert () {
+	/usr/bin/osascript -e "
+	on run
+	display dialog \"\" & return & \"Your FileVault Key was successfully Changed\" with title \"$orgName FileVault Key Reset\" buttons {\"Close\"} default button 1 with icon POSIX file \"/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/FileVaultIcon.icns\"
+	end run"
+}
+
+errorAlert () {
+ /usr/bin/osascript -e "
+on run
+	display dialog \"FileVault Key not Changed\" & return & \"$result\" buttons {\"Cancel\", \"Try Again\"} default button 2 with title \"$orgName FileVault Key Reset\" with icon POSIX file \"/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/FileVaultIcon.icns\"
+end run"
+ if [ "$?" == "1" ]
+ 	then
+		echo "User Canceled"
+		exit 0
+	else
+		try=$(($try+1))
+	fi
+}
+
+haltAlert () {
+	/usr/bin/osascript -e "
+	on run
+		display dialog \"FileVault Key not changed\" & return & \"$haltMsg\" buttons {\"Close\"} default button 1 with title \"$orgName FileVault Key Reset\" with icon POSIX file \"/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/FileVaultIcon.icns\"
+	end run
+	"
+}
+
+while true
+	do
+		passwordPrompt
+		if [[ $result = *"Error"* ]]
+			then
+				echo "Error Changing Key"
+				if [ $try -ge $maxTry ]
+					then
+						haltAlert
+						echo "Quitting.. Too Many failures"
+						exit 0
+					else
+						echo $result
+						errorAlert
+					fi
+				else
+					echo "Successfully Changed FV2 Key"
+					successAlert
+					exit 0
+				fi
+done
