@@ -63,6 +63,8 @@
 # - Error handeling, custom Window Lables, Messages and FV2 Icon
 # -Updated by David Raabe on July 26, 2018
 # - Added Custom Branding to pop up windows
+# -Updated by Sebastien Del Saz Alvarez on January 22, 2021
+# -Changed OS variable and relevant if statements to use OS Build rather than OS Version to avoid errors in Big Sur
 ####################################################################################################
 #
 # Parameter 4 = Set organization name in pop up window
@@ -104,8 +106,8 @@ userName=$(/usr/bin/stat -f%Su /dev/console)
 ## Grab the UUID of the User
 userNameUUID=$(dscl . -read /Users/$userName/ GeneratedUID | awk '{print $2}')
 
-## Get the OS version
-OS=`/usr/bin/sw_vers -productVersion | awk -F. {'print $2'}`
+## Get the OS build
+BUILD=`/usr/bin/sw_vers -buildVersion | awk {'print substr ($0,0,2)'}`
 
 ## This first user check sees if the logged in account is already authorized with FileVault 2
 userCheck=`fdesetup list | awk -v usrN="$userNameUUID" -F, 'match($0, usrN) {print $1}'`
@@ -148,7 +150,7 @@ echo "User Canceled"
 exit 0
 fi
 try=$((try+1))
-if [[ $OS -ge 9 ]] &&  [[ $OS -lt 13 ]]; then
+if [[ $BUILD -ge 13 ]] &&  [[ $BUILD -lt 17 ]]; then
 ## This "expect" block will populate answers for the fdesetup prompts that normally occur while hiding them from output
 result=$(expect -c "
 log_user 0
@@ -159,7 +161,7 @@ send \r
 log_user 1
 expect eof
 " >> /dev/null)
-elif [[ $OS -ge 13 ]]; then
+elif [[ $BUILD -ge 17 ]]; then
 result=$(expect -c "
 log_user 0
 spawn fdesetup changerecovery -personal
