@@ -73,6 +73,10 @@
 # Parameter 7 = Custom Branding - Defaults to Self Service Icon
 #Customizing Window
 
+## Exit the script when a command or piped action fails
+set -e
+set -o pipefail
+
 selfServiceBrandIcon="/Users/$3/Library/Application Support/com.jamfsoftware.selfservice.mac/Documents/Images/brandingimage.png"
 jamfBrandIcon="/Library/Application Support/JAMF/Jamf.app/Contents/Resources/AppIcon.icns"
 fileVaultIcon="/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/FileVaultIcon.icns"
@@ -98,7 +102,6 @@ elif [[ -f $jamfBrandIcon ]]; then
 else
 brandIcon=$fileVaultIcon
 fi
-
 
 ## Get the logged in user's name
 userName=$(/usr/bin/stat -f%Su /dev/console)
@@ -147,7 +150,7 @@ end run")
 if [ "$?" == "1" ]
 then
 echo "User Canceled"
-exit 0
+exit 1
 fi
 try=$((try+1))
 if [[ $BUILD -ge 13 ]] &&  [[ $BUILD -lt 17 ]]; then
@@ -196,7 +199,7 @@ end run"
  if [ "$?" == "1" ]
   then
 echo "User Canceled"
-exit 0
+exit 1
 else
 try=$(($try+1))
 fi
@@ -220,7 +223,7 @@ if [ $try -ge $maxTry ]
 then
 haltAlert
 echo "Quitting.. Too Many failures"
-exit 0
+exit 1
 else
 echo $result
 errorAlert
